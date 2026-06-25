@@ -1,14 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
     namespace = "com.example.ekiwatch"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -55,4 +55,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("com.google.maps.android:maps-compose:6.0.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+
 }
