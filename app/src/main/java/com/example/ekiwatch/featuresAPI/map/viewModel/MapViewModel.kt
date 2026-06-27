@@ -76,6 +76,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun loadTrainRoute(departureStationName: String, arrivalStationName: String) {
         viewModelScope.launch {
             try {
+                /*
+                Here, the Ekispert stuff will be managed loading it into the navigation screen
                 val mockPoints = listOf(
                     LatLng(35.6025, 139.6272),
                     LatLng(35.6131, 139.6669),
@@ -125,7 +127,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 geofenceManager.registerStationGeofences(
                     stations = mockStations,
                     radiusMeters = settingsManager.geofenceRadiusMeters.value
-                )
+                ) */
 
             } catch (e: Exception) {
                 e.printStackTrace()

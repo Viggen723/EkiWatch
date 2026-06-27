@@ -37,7 +37,6 @@ class RoutingRepository(
                     emptyList()
                 }
             } catch (e: HttpException) {
-                // THIS IS THE IMPORTANT PART
                 val errorBody = e.response()?.errorBody()?.string()
                 android.util.Log.e("EkiWatch", "API Error Body: $errorBody")
                 emptyList()
@@ -47,6 +46,7 @@ class RoutingRepository(
             }
         }
 
+    // TODO We will use Ekispert with this
     suspend fun getTrainRoute(
         departureStationName: String,
         arrivalStationName: String
