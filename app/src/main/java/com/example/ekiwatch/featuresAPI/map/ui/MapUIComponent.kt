@@ -1,8 +1,11 @@
 package com.example.ekiwatch.featuresAPI.map.ui
 
 import android.Manifest
-import android.os.Build
 import android.content.pm.PackageManager
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -12,10 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -150,6 +156,48 @@ fun MapUIComponent(
                 .padding(top = 16.dp)
                 .fillMaxWidth()
         )
+
+        if (viewModel.shouldPromptForBackgroundAlerts) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissBackgroundAlertsPrompt() },
+                title = { Text("Enable background alerts") },
+                text = {
+                    Text(
+                        "EkiWatch needs background location to notify you when you are close to your destination, even if the app is not open."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val hasBackgroundLocation =
+                                Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                                        ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                                        ) == PackageManager.PERMISSION_GRANTED
+
+                            if (hasBackgroundLocation) {
+                                viewModel.registerSelectedDestinationGeofence()
+                            } else {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", context.packageName, null)
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text("Enable")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissBackgroundAlertsPrompt() }) {
+                        Text("Not now")
+                    }
+                }
+            )
+        }
     }
 }
 

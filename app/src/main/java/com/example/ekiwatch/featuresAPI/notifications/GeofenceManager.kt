@@ -9,8 +9,13 @@ import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
 
 class GeofenceManager(private val context: Context) {
+
+    companion object {
+        const val SELECTED_DESTINATION_REQUEST_ID = "selected_destination"
+    }
 
     private val geofencingClient: GeofencingClient = LocationServices.getGeofencingClient(context)
 
@@ -54,5 +59,32 @@ class GeofenceManager(private val context: Context) {
 
     fun clearActiveGeofences() {
         geofencingClient.removeGeofences(geofencePendingIntent)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun registerSelectedDestinationGeofence(destination: LatLng, radiusMeters: Float = 500f) {
+        val geofence = Geofence.Builder()
+            .setRequestId(SELECTED_DESTINATION_REQUEST_ID)
+            .setCircularRegion(destination.latitude, destination.longitude, radiusMeters)
+            .setExpirationDuration(Geofence.NEVER_EXPIRE)
+            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+            .setNotificationResponsiveness(5000)
+            .build()
+
+        val geofencingRequest = GeofencingRequest.Builder()
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            .addGeofence(geofence)
+            .build()
+
+        geofencingClient.removeGeofences(listOf(SELECTED_DESTINATION_REQUEST_ID))
+            .addOnCompleteListener {
+                geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)
+                    .addOnSuccessListener {
+                        android.util.Log.d("EkiWatch", "Successfully registered selected destination geofence.")
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.d("EkiWatch", "Failed to register selected destination geofence: ${e.message}", e)
+                    }
+            }
     }
 }

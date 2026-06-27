@@ -23,9 +23,23 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
             val triggeringGeofence = event.triggeringGeofences?.firstOrNull() ?: return
             val stationId = triggeringGeofence.requestId
+            android.util.Log.d("EkiWatch", "Geofence enter event for $stationId")
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {
+                    val settings = SettingsManager.getInstance(context)
+                    if (stationId == GeofenceManager.SELECTED_DESTINATION_REQUEST_ID) {
+                        if (settings.notificationsEnabled.value) {
+                            NotificationHelper.showStationArrivalNotification(
+                                context = context,
+                                stationId = stationId,
+                                title = "Arriving soon",
+                                body = "You are close to your selected destination."
+                            )
+                        }
+                        return@launch
+                    }
+
                     val db = EkiWatchDatabase.getDatabase(context)
                     val landmarks = db.landmarkDao().getByNearestStation(stationId)
                     val station = db.stationDao().getById(stationId)
@@ -44,7 +58,6 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                     // feature, not a notification.
                     RecentPlaceRepository(db.recentPlaceDao()).logVisit(stationId)
 
-                    val settings = SettingsManager.getInstance(context)
                     if (settings.notificationsEnabled.value) {
                         NotificationHelper.showStationArrivalNotification(
                             context = context,

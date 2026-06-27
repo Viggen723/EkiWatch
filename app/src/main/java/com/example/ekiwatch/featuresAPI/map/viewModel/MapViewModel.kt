@@ -67,6 +67,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     val walkingPolylinePoints = mutableStateListOf<LatLng>()
+    var shouldPromptForBackgroundAlerts by mutableStateOf(false)
+        private set
+    private var selectedDestination: LatLng? = null
 
     fun loadUserLocation() {
         viewModelScope.launch {
@@ -203,6 +206,19 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun dismissBackgroundAlertsPrompt() {
+        shouldPromptForBackgroundAlerts = false
+    }
+
+    fun registerSelectedDestinationGeofence() {
+        val destination = selectedDestination ?: return
+        geofenceManager.registerSelectedDestinationGeofence(
+            destination = destination,
+            radiusMeters = settingsManager.geofenceRadiusMeters.value
+        )
+        shouldPromptForBackgroundAlerts = false
+    }
+
     fun resolveAndSelectDestination(placeId: String) {
         Log.d("EkiWatch", "Selected placeId: $placeId")
         val placeFields = listOf(Place.Field.LOCATION)
@@ -213,6 +229,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 val destination = response.place.location
                 if (destination != null) {
                     Log.d("EkiWatch", "Destination LatLng: $destination")
+                    selectedDestination = destination
+                    shouldPromptForBackgroundAlerts = true
                     viewModelScope.launch {
                         val origin = mapRepository.getCurrentLocation()
                         Log.d("EkiWatch", "Origin LatLng: $origin")
