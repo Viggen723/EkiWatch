@@ -235,6 +235,7 @@ fun SearchComponent(
                         viewModel.resolveAndSelectDestination(place.placeId)
                     }
                 )
+
             }
         }
     }

@@ -2,7 +2,12 @@ package com.example.ekiwatch.data.location
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Looper
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +30,29 @@ class MapRepository(private val context: Context) {
             }
         }.addOnFailureListener {
             continuation.resume(LatLng(35.6812, 139.7671))
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun observeLocationUpdates(): Flow<LatLng> = callbackFlow {
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000L)
+            .setMinUpdateIntervalMillis(5_000L)
+            .setMinUpdateDistanceMeters(10f)
+            .build()
+
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { location ->
+                    trySend(LatLng(location.latitude, location.longitude))
+                }
+            }
+        }
+
+        fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            .addOnFailureListener { close(it) }
+
+        awaitClose {
+            fusedLocationClient.removeLocationUpdates(callback)
         }
     }
 }
