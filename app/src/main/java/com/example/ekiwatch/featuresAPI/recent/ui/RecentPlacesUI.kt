@@ -11,10 +11,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,7 +48,9 @@ fun RecentPlacesUI(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(recentStations, key = { it.id }) { station ->
-                    RecentStationCard(station)
+                    RecentStationCard(
+                        station,
+                        onRemove = { viewModel.removeRecent(station.id) })
                 }
             }
         }
@@ -80,7 +84,8 @@ private fun EmptyVisitedMessage(modifier: Modifier = Modifier) {
 @Composable
 private fun RecentStationCard(
     station: RecentStationView,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRemove: () -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -105,10 +110,20 @@ private fun RecentStationCard(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp)
             )
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Remove from Past Visited"
+                )
+            }
         }
     }
 }
 
+// TODO If we end up having more of these types of converters, lets make an object class for them
 private fun formatVisitTime(epochMillis: Long): String {
     val formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
     return formatter.format(Date(epochMillis))

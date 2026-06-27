@@ -9,6 +9,8 @@ class RecentPlaceRepository(private val recentPlaceDao: RecentPlaceDao) {
     fun getRecentStations(): Flow<List<RecentStationView>> =
         recentPlaceDao.getRecentStations()
 
+
+
     /**
      * Called whenever a station's geofence is entered - see
      * GeofenceBroadcastReceiver. Each call appends a new visit row, so the
@@ -23,6 +25,12 @@ class RecentPlaceRepository(private val recentPlaceDao: RecentPlaceDao) {
                     visitedAtEpochMillis = System.currentTimeMillis()
                 )
             )
+        }
+    }
+
+    suspend fun removeFavorite(stationId: String) {
+        withContext(Dispatchers.IO) {
+            recentPlaceDao.deleteByStationId(stationId)
         }
     }
 }

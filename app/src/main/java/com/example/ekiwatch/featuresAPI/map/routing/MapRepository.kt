@@ -10,10 +10,11 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
+// This class is mainly just for getting the current location of the user
 class MapRepository(private val context: Context) {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission") // Tells to ignore the missing permission to set default
     suspend fun getCurrentLocation(): LatLng = suspendCancellableCoroutine { continuation ->
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {

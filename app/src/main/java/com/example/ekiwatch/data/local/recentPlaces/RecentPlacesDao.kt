@@ -1,6 +1,7 @@
 package com.example.ekiwatch.data.local.recentPlaces
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,9 @@ interface RecentPlaceDao {
         """
     )
     fun getRecentStations(): Flow<List<RecentStationView>>
+
+    @Query("DELETE FROM recent_places WHERE stationId= :stationId")
+    suspend fun deleteByStationId(stationId: String)
 
     @Query("DELETE FROM recent_places")
     suspend fun deleteAll()

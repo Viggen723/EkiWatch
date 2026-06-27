@@ -6,15 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Simple SharedPreferences-backed store for user-facing app settings.
- *
- * Kept deliberately small and dependency-free (no DataStore) since these are
- * a handful of flags/values, not structured or relational data - that's what
- * Room is for elsewhere in this app (see landmark/, station/, favorite/,
- * recent/). Each setting exposes a StateFlow so Compose screens can collect
- * it directly and recompose on change.
- */
 class SettingsManager private constructor(context: Context) {
 
     private val prefs: SharedPreferences =
@@ -55,6 +46,7 @@ class SettingsManager private constructor(context: Context) {
         _distanceUnit.value = unit
     }
 
+    // TODO Implement so people can sort out of the many shrines that wil pop up
     fun setPreferredLandmarkCategories(categories: Set<String>) {
         prefs.edit().putStringSet(KEY_PREFERRED_CATEGORIES, categories).apply()
         _preferredLandmarkCategories.value = categories

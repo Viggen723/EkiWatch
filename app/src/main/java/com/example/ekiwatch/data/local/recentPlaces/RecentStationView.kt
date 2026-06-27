@@ -1,5 +1,7 @@
 package com.example.ekiwatch.data.local.recentPlaces
 
+import com.example.ekiwatch.data.local.landmark.LandmarkEntity
+
 /**
  * One row for the "Visited" screen: a station's display data plus when the
  * user most recently passed through its geofence. Room can populate this
@@ -12,5 +14,5 @@ data class RecentStationView(
     val nameJa: String?,
     val lat: Double,
     val lon: Double,
-    val lastVisitedAtEpochMillis: Long
+    val lastVisitedAtEpochMillis: Long,
 )

@@ -14,7 +14,7 @@ class StationCrosswalk(
         val resolved = mutableListOf<StationEntity>()
 
         for (point in course.route.points) {
-            val station = point.station ?: continue // walking-only points have no Station
+            val station = point.station ?: continue // walking only points have no Station
 
             val existing = stationDao.getByEkispertCode(station.code)
             val entity = existing ?: createAndInsert(

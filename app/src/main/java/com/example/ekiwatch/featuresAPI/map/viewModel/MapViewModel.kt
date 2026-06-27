@@ -170,8 +170,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectDestination(origin: LatLng, destination: LatLng) {
         viewModelScope.launch {
-            val route = routingRepository.getWalkingRoute(origin, destination)
+            // Check this order to make sure that it is matched for the train. Fixed redrawing issue
             walkingPolylinePoints.clear()
+            val route = routingRepository.getWalkingRoute(origin, destination)
             walkingPolylinePoints.addAll(route)
         }
     }

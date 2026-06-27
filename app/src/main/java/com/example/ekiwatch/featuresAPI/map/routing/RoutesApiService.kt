@@ -4,6 +4,7 @@ import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
 
+// The actual HTTP request interface that is used in the RoutingRepository
 interface RoutesApiService {
     @POST("directions/v2:computeRoutes")
     suspend fun computeRoutes(

@@ -82,7 +82,8 @@ fun MapUIComponent(
             cameraPositionState = viewModel.cameraPositionState,
             properties = MapProperties(isMyLocationEnabled = hasLocationPermission)
         ) {
-            // This will now draw automatically when walkingPolylinePoints changes
+
+            // Walking lines
             if (viewModel.walkingPolylinePoints.isNotEmpty()) {
                 Polyline(
                     points = viewModel.walkingPolylinePoints,
@@ -129,13 +130,14 @@ fun SearchComponent(
         query = text,
         onQueryChange = { newText ->
             text = newText // Update local UI immediately
-            viewModel.onSearchQueryChanged(newText) // Async fetch in background
+            viewModel.onSearchQueryChanged(newText) // Async fetch in background, see MapViewModel
         },
         onSearch = { active = false },
         active = active,
         onActiveChange = { active = it },
         placeholder = { Text("Where ya off too?") }
     ) {
+        // The Lazy Column that displays the result from the search that is above
         LazyColumn {
             items(viewModel.searchResults) { place ->
                 ListItem(

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
+    // Settings manager was set up in the local files. Maybe should move it here?
     private val settingsManager = SettingsManager.getInstance(application)
 
     val notificationsEnabled: StateFlow<Boolean> = settingsManager.notificationsEnabled

@@ -9,6 +9,7 @@ import com.example.ekiwatch.data.local.recentPlaces.RecentStationView
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class RecentPlacesViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -18,4 +19,10 @@ class RecentPlacesViewModel(application: Application) : AndroidViewModel(applica
     val recentStations: StateFlow<List<RecentStationView>> = recentPlaceRepository
         .getRecentStations()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun removeRecent(stationId: String) {
+        viewModelScope.launch {
+            recentPlaceRepository.removeFavorite(stationId)
+        }
+    }
 }

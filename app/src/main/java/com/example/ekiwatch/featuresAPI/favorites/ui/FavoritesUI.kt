@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -62,7 +63,7 @@ private fun EmptyFavoritesMessage(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Filled.Star,
+            imageVector = Icons.Filled.Favorite,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.outline
         )
@@ -72,7 +73,7 @@ private fun EmptyFavoritesMessage(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            text = "Star a landmark on the map to save it here.",
+            text = "Save a landmark on the map to save it here.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

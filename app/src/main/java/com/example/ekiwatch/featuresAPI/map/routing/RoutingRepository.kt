@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
+// Gets the data from the APIs (Both the Ekispert and the Google Maps routing
 class RoutingRepository(
     private val context: Context,
     private val routesApiService: RoutesApiService,
