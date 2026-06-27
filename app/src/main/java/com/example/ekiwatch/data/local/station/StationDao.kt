@@ -26,6 +26,22 @@ interface StationDao {
     @Query("SELECT * FROM stations WHERE ekispertCode = :ekispertCode")
     suspend fun getByEkispertCode(ekispertCode: String): StationEntity?
 
+    /**
+     * Bounding box search: pulls candidate stations in a local rectangular frame.
+     * Used as a high-performance pre-filter before calculating exact pedestrian routes.
+     */
+    @Query("""
+        SELECT * FROM stations 
+        WHERE lat BETWEEN :minLat AND :maxLat 
+        AND lon BETWEEN :minLon AND :maxLon
+    """)
+    suspend fun getStationsInBoundingBox(
+        minLat: Double,
+        maxLat: Double,
+        minLon: Double,
+        maxLon: Double
+    ): List<StationEntity>
+
     @Query("SELECT * FROM stations")
     suspend fun getAll(): List<StationEntity>
 

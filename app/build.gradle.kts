@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.devtools.ksp") version "2.3.4"
 
+    id("com.google.devtools.ksp") version "2.3.4"
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
@@ -38,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -57,9 +58,14 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
 
     implementation("com.google.maps.android:maps-compose:6.0.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("org.slf4j:slf4j-simple:2.0.7")
+    implementation("com.google.android.libraries.places:places:4.0.0")
+    implementation("com.google.maps.android:android-maps-utils:3.20.1")
 
     val room_version = "2.8.4"
 
@@ -72,4 +78,7 @@ dependencies {
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.kotlinx.serialization)
 
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation("com.google.android.libraries.places:places:5.2.0")
 }

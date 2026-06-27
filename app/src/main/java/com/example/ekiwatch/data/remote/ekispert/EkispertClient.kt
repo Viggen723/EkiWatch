@@ -7,11 +7,14 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * Builds the Retrofit client for EkispertApi, using kotlinx.serialization as
- * the JSON converter (Taking the recieved JSON and then converting it to make the other classes)
+ * the JSON converter to safely parse transit network responses.
  */
 object EkispertClient {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // Configured to gracefully ignore metadata keys we don't map out in our data classes
+    private val json = Json {
+        ignoreUnknownKeys = true
+    }
 
     val api: EkispertApi by lazy {
         Retrofit.Builder()
