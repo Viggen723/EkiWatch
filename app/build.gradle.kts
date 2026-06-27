@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    id("com.google.devtools.ksp") version "2.3.4"
 
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
@@ -58,5 +60,16 @@ dependencies {
 
     implementation("com.google.maps.android:maps-compose:6.0.0")
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+
+    val room_version = "2.8.4"
+
+    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version") // Required for Coroutines
+    ksp("androidx.room:room-compiler:$room_version")
+
+    implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.kotlinx.serialization)
 
 }
