@@ -1,6 +1,7 @@
 package com.example.ekiwatch.featuresAPI.map.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +20,10 @@ import com.example.ekiwatch.data.remote.ekispert.EkispertClient
 import com.example.ekiwatch.featuresAPI.map.routing.RoutingRepository
 import com.example.ekiwatch.featuresAPI.map.routing.RoutesApiService
 import com.example.ekiwatch.featuresAPI.notifications.GeofenceManager
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
@@ -172,12 +175,36 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             // Check this order to make sure that it is matched for the train. Fixed redrawing issue
             walkingPolylinePoints.clear()
-            val route = routingRepository.getWalkingRoute(origin, destination)
-            walkingPolylinePoints.addAll(route)
+            try {
+                val route = routingRepository.getWalkingRoute(origin, destination)
+                walkingPolylinePoints.addAll(route)
+                Log.d("EkiWatch", "Route point count: ${route.size}")
+
+                if (route.isNotEmpty()) {
+                    val boundsBuilder = LatLngBounds.builder()
+                    boundsBuilder.include(origin)
+                    route.forEach { boundsBuilder.include(it) }
+                    boundsBuilder.include(destination)
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 120)
+                    )
+                    Log.d("EkiWatch", "Camera animation triggered for route bounds")
+                } else {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(destination, 15f)
+                    )
+                    Log.d("EkiWatch", "Camera animation triggered for destination")
+                }
+            } catch (e: Exception) {
+                Log.d("EkiWatch", "Route fetch or camera animation failed: ${e.message}")
+                cameraPositionState.position = CameraPosition.fromLatLngZoom(destination, 15f)
+                Log.d("EkiWatch", "Camera move triggered for destination fallback")
+            }
         }
     }
 
     fun resolveAndSelectDestination(placeId: String) {
+        Log.d("EkiWatch", "Selected placeId: $placeId")
         val placeFields = listOf(Place.Field.LOCATION)
         val request = FetchPlaceRequest.newInstance(placeId, placeFields)
 
@@ -185,8 +212,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             .addOnSuccessListener { response ->
                 val destination = response.place.location
                 if (destination != null) {
+                    Log.d("EkiWatch", "Destination LatLng: $destination")
                     viewModelScope.launch {
                         val origin = mapRepository.getCurrentLocation()
+                        Log.d("EkiWatch", "Origin LatLng: $origin")
                         selectDestination(origin, destination)
                     }
                 } else {

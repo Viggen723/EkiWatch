@@ -1,6 +1,7 @@
 package com.example.ekiwatch.featuresAPI.map.ui
 
 import android.Manifest
+import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,7 +39,6 @@ fun MapUIComponent(
 ) {
     val context = LocalContext.current
 
-    // Check both permissions on startup
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -50,30 +49,69 @@ fun MapUIComponent(
     }
     var hasNotificationPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
         )
     }
+    var requestedLocationPermission by rememberSaveable { mutableStateOf(false) }
+    var requestedNotificationPermission by rememberSaveable { mutableStateOf(false) }
+    var locationPermissionFinished by rememberSaveable { mutableStateOf(false) }
+    var notificationPermissionFinished by rememberSaveable { mutableStateOf(false) }
+    var loadedUserLocation by rememberSaveable { mutableStateOf(false) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasLocationPermission = isGranted
-        hasNotificationPermission = isGranted
-        if (isGranted) viewModel.loadUserLocation()
-    }
-
-    // Check all the necessary requirements for the app upon startup
-    LaunchedEffect(Unit) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else if (!hasNotificationPermission) {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
+        locationPermissionFinished = true
+        if (isGranted && !loadedUserLocation) {
+            loadedUserLocation = true
             viewModel.loadUserLocation()
         }
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasNotificationPermission = isGranted
+        notificationPermissionFinished = true
+    }
+
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission) {
+            locationPermissionFinished = true
+            if (!loadedUserLocation) {
+                loadedUserLocation = true
+                viewModel.loadUserLocation()
+            }
+        } else if (!requestedLocationPermission) {
+            requestedLocationPermission = true
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    LaunchedEffect(locationPermissionFinished) {
+        if (!locationPermissionFinished) return@LaunchedEffect
+
+        if (hasNotificationPermission || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionFinished = true
+        } else if (!requestedNotificationPermission) {
+            requestedNotificationPermission = true
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    if (!locationPermissionFinished || !notificationPermissionFinished) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Setting up permissions...")
+        }
+        return
     }
 
     Box(modifier = modifier.fillMaxSize()) {
