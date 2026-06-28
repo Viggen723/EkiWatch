@@ -157,6 +157,17 @@ fun MapUIComponent(
                 .fillMaxWidth()
         )
 
+        if (viewModel.routeIsActive) {
+            RouteBottomSheet(
+                etaMinutes = null,
+                destinationName = viewModel.selectedDestinationName,
+                upcomingStops = emptyList(),
+                nearbyPlaces = emptyList(),
+                onEndTrip = viewModel::endTrip,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+
         if (viewModel.shouldPromptForBackgroundAlerts) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissBackgroundAlertsPrompt() },
@@ -211,6 +222,13 @@ fun SearchComponent(
     var active by rememberSaveable { mutableStateOf(false) }
     var text by rememberSaveable { mutableStateOf("") }
 
+    LaunchedEffect(viewModel.searchResetSignal) {
+        if (viewModel.searchResetSignal > 0) {
+            active = false
+            text = ""
+        }
+    }
+
     SearchBar(
         modifier = modifier,
         query = text,
@@ -230,9 +248,10 @@ fun SearchComponent(
                     headlineContent = { Text(place.getPrimaryText(null).toString()) },
                     modifier = Modifier.clickable {
                         active = false
-                        text = place.getPrimaryText(null).toString()
+                        val destinationName = place.getPrimaryText(null).toString()
+                        text = destinationName
 
-                        viewModel.resolveAndSelectDestination(place.placeId)
+                        viewModel.resolveAndSelectDestination(place.placeId, destinationName)
                     }
                 )
 

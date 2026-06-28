@@ -34,6 +34,15 @@ class MapRepository(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
+    suspend fun getCurrentLocationOrNull(): LatLng? = suspendCancellableCoroutine { continuation ->
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            continuation.resume(location?.let { LatLng(it.latitude, it.longitude) })
+        }.addOnFailureListener {
+            continuation.resume(null)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
     fun observeLocationUpdates(): Flow<LatLng> = callbackFlow {
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000L)
             .setMinUpdateIntervalMillis(5_000L)

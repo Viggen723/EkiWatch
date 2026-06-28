@@ -72,6 +72,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var shouldPromptForBackgroundAlerts by mutableStateOf(false)
         private set
+    var routeIsActive by mutableStateOf(false)
+        private set
+    var selectedDestinationName by mutableStateOf<String?>(null)
+        private set
     private var selectedDestination: LatLng? = null
 
     fun loadUserLocation() {
@@ -146,10 +150,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     var searchQuery by mutableStateOf("")
     val searchResults = mutableStateListOf<AutocompletePrediction>()
+    var searchResetSignal by mutableStateOf(0)
+        private set
     private var searchJob: kotlinx.coroutines.Job? = null
     private var routeRefreshJob: Job? = null
     private var lastRouteOrigin: LatLng? = null
     private var isRefreshingRoute = false
+    private var routeGeneration = 0
 
     fun onSearchQueryChanged(query: String) {
         searchQuery = query
@@ -180,11 +187,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun selectDestination(origin: LatLng, destination: LatLng) {
+    fun selectDestination(origin: LatLng, destination: LatLng, generation: Int = routeGeneration) {
         viewModelScope.launch {
             // Check this order to make sure that it is matched for the train. Fixed redrawing issue
             try {
                 val route = routingRepository.getWalkingRoute(origin, destination)
+                if (generation != routeGeneration || !routeIsActive) return@launch
                 Log.d("EkiWatch", "Route point count: ${route.size}")
 
                 if (route.isNotEmpty()) {
@@ -205,10 +213,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d("EkiWatch", "Camera animation triggered for destination")
                 }
             } catch (e: Exception) {
+                if (generation != routeGeneration || !routeIsActive) return@launch
                 Log.d("EkiWatch", "Route fetch or camera animation failed: ${e.message}")
                 cameraPositionState.position = CameraPosition.fromLatLngZoom(destination, 15f)
                 Log.d("EkiWatch", "Camera move triggered for destination fallback")
             }
+            if (generation != routeGeneration || !routeIsActive) return@launch
             startRouteRefreshTracking()
         }
     }
@@ -300,7 +310,39 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         shouldPromptForBackgroundAlerts = false
     }
 
-    fun resolveAndSelectDestination(placeId: String) {
+    fun endTrip() {
+        routeGeneration++
+        routeRefreshJob?.cancel()
+        routeRefreshJob = null
+        searchJob?.cancel()
+        searchJob = null
+        searchQuery = ""
+        searchResults.clear()
+        searchResetSignal++
+        selectedDestination = null
+        selectedDestinationName = null
+        routeIsActive = false
+        walkingPolylinePoints = emptyList()
+        routingRepository.trainPolylinePoints.clear()
+        lastRouteOrigin = null
+        isRefreshingRoute = false
+        shouldPromptForBackgroundAlerts = false
+        geofenceManager.clearActiveGeofences()
+        viewModelScope.launch {
+            try {
+                val currentLocation = mapRepository.getCurrentLocationOrNull()
+                if (currentLocation != null) {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(currentLocation, 15f)
+                    )
+                }
+            } catch (e: Exception) {
+                Log.d("EkiWatch", "Could not recenter after ending trip: ${e.message}", e)
+            }
+        }
+    }
+
+    fun resolveAndSelectDestination(placeId: String, destinationName: String? = null) {
         Log.d("EkiWatch", "Selected placeId: $placeId")
         val placeFields = listOf(Place.Field.LOCATION)
         val request = FetchPlaceRequest.newInstance(placeId, placeFields)
@@ -311,6 +353,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 if (destination != null) {
                     Log.d("EkiWatch", "Destination LatLng: $destination")
                     selectedDestination = destination
+                    selectedDestinationName = destinationName
+                    routeIsActive = true
+                    routeGeneration++
+                    val generation = routeGeneration
                     shouldPromptForBackgroundAlerts = true
                     routeRefreshJob?.cancel()
                     routeRefreshJob = null
@@ -318,7 +364,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     viewModelScope.launch {
                         val origin = mapRepository.getCurrentLocation()
                         Log.d("EkiWatch", "Origin LatLng: $origin")
-                        selectDestination(origin, destination)
+                        selectDestination(origin, destination, generation)
                     }
                 } else {
                     android.util.Log.e("EkiWatch", "Place location is null")
