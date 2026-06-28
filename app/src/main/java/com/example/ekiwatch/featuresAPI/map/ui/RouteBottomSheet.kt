@@ -67,17 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
-private val BgDeep = Color(0xFF0B1320)
-private val Surface = Color(0xFF16243B)
-private val LineColor = Color(0xFF26395C)
-private val Gold = Color(0xFFF5A623)
-private val Coral = Color(0xFFFF6B5B)
-private val Teal = Color(0xFF2EC4B6)
-private val TealDim = Color(0xFF163A37)
-private val Ink = Color(0xFFEDEFF4)
-private val InkDim = Color(0xFF8FA0BD)
-private val InkFaint = Color(0xFF566685)
-
 private val RowHeight = 44.dp
 
 data class RouteStopUi(

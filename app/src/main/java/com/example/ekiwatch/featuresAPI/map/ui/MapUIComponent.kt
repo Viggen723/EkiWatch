@@ -8,27 +8,49 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.SearchBar
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ekiwatch.featuresAPI.map.viewModel.MapViewModel
@@ -154,7 +176,7 @@ fun MapUIComponent(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
         )
 
         if (viewModel.routeIsActive) {
@@ -212,7 +234,7 @@ fun MapUIComponent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchComponent(
     viewModel: MapViewModel,
@@ -221,40 +243,135 @@ fun SearchComponent(
     // 1. Use rememberSaveable to keep active/text state alive
     var active by rememberSaveable { mutableStateOf(false) }
     var text by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    fun dismissSearch() {
+        active = false
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
 
     LaunchedEffect(viewModel.searchResetSignal) {
         if (viewModel.searchResetSignal > 0) {
-            active = false
             text = ""
+            dismissSearch()
         }
     }
 
-    SearchBar(
-        modifier = modifier,
-        query = text,
-        onQueryChange = { newText ->
-            text = newText // Update local UI immediately
-            viewModel.onSearchQueryChanged(newText) // Async fetch in background, see MapViewModel
-        },
-        onSearch = { active = false },
-        active = active,
-        onActiveChange = { active = it },
-        placeholder = { Text("Where ya off too?") }
-    ) {
-        // The Lazy Column that displays the result from the search that is above
-        LazyColumn {
-            items(viewModel.searchResults) { place ->
-                ListItem(
-                    headlineContent = { Text(place.getPrimaryText(null).toString()) },
-                    modifier = Modifier.clickable {
-                        active = false
-                        val destinationName = place.getPrimaryText(null).toString()
-                        text = destinationName
+    Box(modifier = modifier) {
+        if (active) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null,
+                        onClick = { dismissSearch() }
+                    )
+            )
+        }
 
-                        viewModel.resolveAndSelectDestination(place.placeId, destinationName)
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(BgDeep.copy(alpha = 0.92f))
+                    .border(1.dp, LineColor.copy(alpha = 0.85f), RoundedCornerShape(22.dp))
+                    .clickable { active = true }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = Teal,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                BasicTextField(
+                    value = text,
+                    onValueChange = { newText ->
+                        text = newText
+                        active = true
+                        viewModel.onSearchQueryChanged(newText)
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) active = true
+                        },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = Ink,
+                        fontSize = 16.sp
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = { dismissSearch() }
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (text.isEmpty()) {
+                            Text(
+                                text = "Where ya off too?",
+                                color = InkFaint,
+                                fontSize = 16.sp
+                            )
+                        }
+                        innerTextField()
                     }
                 )
+            }
 
+            if (active && viewModel.searchResults.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .heightIn(max = 280.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(BgDeep.copy(alpha = 0.96f))
+                        .border(1.dp, LineColor.copy(alpha = 0.85f), RoundedCornerShape(18.dp))
+                ) {
+                    items(viewModel.searchResults) { place ->
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = place.getPrimaryText(null).toString(),
+                                    color = Ink,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = place.getSecondaryText(null).toString(),
+                                    color = InkDim,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = Surface.copy(alpha = 0.96f),
+                                headlineColor = Ink,
+                                supportingColor = InkDim
+                            ),
+                            modifier = Modifier.clickable {
+                                val destinationName = place.getPrimaryText(null).toString()
+                                text = destinationName
+                                dismissSearch()
+
+                                viewModel.resolveAndSelectDestination(place.placeId, destinationName)
+                            }
+                        )
+                    }
+                }
             }
         }
     }
